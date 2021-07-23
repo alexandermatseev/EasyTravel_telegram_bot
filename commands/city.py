@@ -1,5 +1,5 @@
+import os
 import requests
-import json
 import re
 
 TAG_RE = re.compile(r'<[^>]+>')
@@ -11,7 +11,7 @@ def remove_tags(text):
 
 url = "https://hotels4.p.rapidapi.com/locations/search"
 headers = {
-    'x-rapidapi-key': "323f778a0amsh0d31b26cd917c2dp1294e9jsnc44549503bd2",
+    'x-rapidapi-key': os.getenv("API_KEY"),
     'x-rapidapi-host': "hotels4.p.rapidapi.com"
     }
 

@@ -4,9 +4,9 @@ def output_answer(new_list):
 		res_dict = dict()
 		name_value = new_list[i].get('name')
 		res_dict['name'] = name_value
-		address_value = new_list[i].get('address')['streetAddress'] + \
-						', ' + new_list[i].get('address')['locality'] + \
-						', ' + new_list[i].get('address')['countryName']
+		address_value = new_list[i].get('address')['streetAddress'] \
+						+ ', ' + new_list[i].get('address')['locality'] \
+						+ ', ' + new_list[i].get('address')['countryName']
 		res_dict['address'] = address_value
 		price_value = new_list[i].get('ratePlan')['price']['current']
 		res_dict['price'] = price_value
