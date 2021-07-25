@@ -1,34 +1,44 @@
 import telebot
 import os
 from commands import city, lowprice, highprice, bestdeal
+from loguru import logger
 
 bot = telebot.TeleBot(os.getenv("TOKEN"))
-id_city = ''
-num_hotels = ''
-quantity_city = ''
-name_city = ''
-method = ''
-max_price = ''
-min_price = ''
-min_distance = ''
-max_distance = ''
+users = {}
+
+
+class User:
+	def __init__(self, chat_id, first_name, last_name):
+		self.chat_id = chat_id
+		self.first_name = first_name
+		self.last_name = last_name
+		self.id_city = ''
+		self.num_hotels = ''
+		self.quantity_city = ''
+		self.name_city = ''
+		self.method = ''
+		self.max_price = ''
+		self.min_price = ''
+		self.min_distance = ''
+		self.max_distance = ''
 
 
 @bot.message_handler(commands=['start'])
-def start_command(message):
+def greetings(message):
+	users["{0}".format(message.chat.id)] = User(message.chat.id, message.from_user.first_name,
+												message.from_user.last_name)
 	bot.send_message(
-		message.chat.id,
-		"[{}](tg://user?id={}), Добро пожаловать!\n"
+		users["{0}".format(message.chat.id)].chat_id,
+		text=
+		"{}, Добро пожаловать!\n"
 		"Я - бот компании Too EasyTravel\n"
 		"Я подбираю отели под твои критерии\n"
-		"Для того что бы разобраться как я работаю напиши /help\n "
+		"Для того что бы разобраться как я работаю напиши /help\n"
 		"Для начала работы введи название города\n"
 		"Например: Москва".format(
-			message.from_user.first_name,
-			message.from_user.id
-		),
-		disable_web_page_preview=True,
-		parse_mode="Markdown")
+			users["{0}".format(message.chat.id)].first_name
+		)
+	)
 
 
 @bot.message_handler(commands=['help'])
@@ -56,9 +66,8 @@ def get_name_city(message):
 
 
 def get_answer_city(message):
-	global name_city
-	name_city = message.text
-	answer = city.get_city(name_city)
+	city_name = message.text
+	answer = city.get_city(city_name)
 	if isinstance(answer, dict):
 		text_button = 'Возможные варианты:'
 		keyboard = telebot.types.InlineKeyboardMarkup()
@@ -77,16 +86,15 @@ def get_answer_city(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('city'))
 def callback_worker(call):
-	global id_city
 	new_data = call.data.split('|')
-	id_city = new_data[1]
+	users["{0}".format(call.message.chat.id)].id_city = new_data[1]
 	bot.edit_message_text(
 		chat_id=call.message.chat.id,
 		message_id=call.message.message_id,
 		text="Выбран город {}".format(new_data[2]))
 	bot.send_message(
 		chat_id=call.message.chat.id,
-		text="Сколько отелей ищем?(Я могу найти до 25-ти отелей)")
+		text="Сколько отелей ищем? (Я могу найти до 25-ти отелей)")
 
 	bot.register_next_step_handler(call.message, get_answer_num_hotels)
 
@@ -97,32 +105,32 @@ def get_num_hotels(message):
 
 
 def get_answer_num_hotels(message):
-	global num_hotels, method
-	num_hotels = message.text
-	if (num_hotels.isalpha()) or (0 >= int(num_hotels)) or (25 < int(num_hotels)):
+	users["{0}".format(message.chat.id)].num_hotels = message.text
+	if (users["{0}".format(message.chat.id)].num_hotels.isalpha()) \
+			or (0 >= int(users["{0}".format(message.chat.id)].num_hotels))\
+			or (25 < int(users["{0}".format(message.chat.id)].num_hotels)):
 		bot.send_message(
 			message.from_user.id,
 			"Вы ввели не коректное число отелей, попробуйте снова( нужно ввести целое число, например 5)"
 		)
 		get_num_hotels(message)
 	else:
-		if method == 'lowprice':
+		if users["{0}".format(message.chat.id)].method == 'lowprice':
 			bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
 			lowprice_message(message)
-		elif method == 'highprice':
+		elif users["{0}".format(message.chat.id)].method == 'highprice':
 			bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
 			highprice_message(message)
-		elif method == 'bestdeal':
+		elif users["{0}".format(message.chat.id)].method == 'bestdeal':
 			get_min_price(message)
-		else:
-			get_method(message)
+		# else:
+		# 	get_method(message)
 
 
 def output_message(message, answer):
-	global id_city, num_hotels, method
-	id_city = ''
-	num_hotels = ''
-	method = ''
+	users["{0}".format(message.chat.id)].id_city = ''
+	users["{0}".format(message.chat.id)].num_hotels = ''
+	users["{0}".format(message.chat.id)].method = ''
 	bot.send_message(message.from_user.id, "Вот что мне удалось найти:")
 	for i in answer:
 		res_string = 'Название отеля - ' + i['name'] + ', \n' \
@@ -134,21 +142,16 @@ def output_message(message, answer):
 
 @bot.message_handler(commands=['lowprice'])
 def lowprice_city(message):
-	global id_city, num_hotels, name_city, method
-	if id_city == '':
-		method = 'lowprice'
+	if users["{0}".format(message.chat.id)].id_city == '':
+		users["{0}".format(message.chat.id)].method = 'lowprice'
 		get_name_city(message)
 
 
-# else:
-#     num_hotels = message.text
-#     bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
-#     ans = lowprice.low_price(id_city, num_hotels)
-#     output_message(message, ans)
-
-
 def lowprice_message(message):
-	ans = lowprice.low_price(id_city, num_hotels)
+	ans = lowprice.low_price(
+		users["{0}".format(message.chat.id)].id_city,
+		users["{0}".format(message.chat.id)].num_hotels
+	)
 	if isinstance(ans, list):
 		output_message(message, ans)
 	else:
@@ -158,19 +161,24 @@ def lowprice_message(message):
 
 @bot.message_handler(commands=['highprice'])
 def highprice_city(message):
-	global id_city, num_hotels, method
-	if id_city == '':
-		method = 'highprice'
+	if users["{0}".format(message.chat.id)].id_city == '':
+		users["{0}".format(message.chat.id)].method = 'highprice'
 		get_name_city(message)
 	else:
-		num_hotels = message.text
+		users["{0}".format(message.chat.id)].num_hotels = message.text
 		bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
-		ans = highprice.high_price(id_city, num_hotels)
+		ans = highprice.high_price(
+			users["{0}".format(message.chat.id)].id_city,
+			users["{0}".format(message.chat.id)].num_hotels
+		)
 		output_message(message, ans)
 
 
 def highprice_message(message):
-	ans = highprice.high_price(id_city, num_hotels)
+	ans = highprice.high_price(
+		users["{0}".format(message.chat.id)].id_city,
+		users["{0}".format(message.chat.id)].num_hotels
+	)
 	if isinstance(ans, list):
 		output_message(message, ans)
 	else:
@@ -180,100 +188,132 @@ def highprice_message(message):
 
 @bot.message_handler(commands=['bestdeal'])
 def bestdeal_city(message):
-	global method
-	if id_city == '':
-		method = 'bestdeal'
+	if users["{0}".format(message.chat.id)].id_city == '':
+		users["{0}".format(message.chat.id)].method = 'bestdeal'
 		get_name_city(message)
 
 
 def get_min_price(message):
-	bot.send_message(message, "Укажите минимальную цену отеля за ночь")
+	bot.send_message(message.from_user.id, "Укажите минимальную цену отеля за ночь (руб)")
 	bot.register_next_step_handler(message, answer_min_price)
 
 
 def answer_min_price(message):
-	global min_price
-	min_price = message.text
-	bot.send_message(message.from_user.id, "Укажите максимальную цену отеля за ночь")
+	users["{0}".format(message.chat.id)].min_price = message.text
+	bot.send_message(message.from_user.id, "Укажите максимальную цену отеля за ночь (руб)")
 	bot.register_next_step_handler(message, answer_max_price)
 
 
 def answer_max_price(message):
-	global max_price
-	max_price = message.text
-	bot.send_message(message.from_user.id, "Укажите минимальное расстояние отеля до центра")
-	bot.register_next_step_handler(message, get_min_distance)
+	users["{0}".format(message.chat.id)].max_price = message.text
+
+	if users["{0}".format(message.chat.id)].min_price > users["{0}".format(message.chat.id)].max_price:
+		bot.send_message(
+			message.from_user.id,
+			"Вы перепутали максималюную и минимальную цену местами, но я все исправил"
+		)
+		maxi_price = users["{0}".format(message.chat.id)].min_price
+		users["{0}".format(message.chat.id)].min_price = users["{0}".format(message.chat.id)].max_price
+		users["{0}".format(message.chat.id)].max_price = maxi_price
+		answer_max_price(message)
+	else:
+		bot.send_message(message.from_user.id, "Укажите минимальное расстояние отеля до центра в км")
+		bot.register_next_step_handler(message, get_min_distance)
 
 
 def get_min_distance(message):
-	global min_distance
-	min_distance = message.text
-	bot.send_message(message.from_user.id, "Укажите максимальное расстояние отеля до центра")
+	users["{0}".format(message.chat.id)].min_distance = message.text
+	bot.send_message(message.from_user.id, "Укажите максимальное расстояние отеля до центра в км")
 	bot.register_next_step_handler(message, bestdeal_message)
 
 
 def bestdeal_message(message):
-	global id_city, min_price, max_price, min_distance, max_distance, num_hotels
-	max_distance = message.text
-	bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
-	ans = bestdeal.best_deal(id_city, num_hotels, min_price, max_price, max_distance, min_distance)
-	output_message(message, ans)
+	users["{0}".format(message.chat.id)].max_distance = message.text
+	if users["{0}".format(message.chat.id)].max_distance < users["{0}".format(message.chat.id)].min_distance:
+		bot.send_message(message.from_user.id,
+						 "Вы перепутали максимальное и минимальное расстояние местами, но я все исправил"
+						 )
+		maxi_dist = users["{0}".format(message.chat.id)].min_distance
+		users["{0}".format(message.chat.id)].min_distance = users["{0}".format(message.chat.id)].max_distance
+		users["{0}".format(message.chat.id)].max_distance = maxi_dist
+		bestdeal_message(message)
+	else:
+		bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
+		ans = bestdeal.best_deal(
+			users["{0}".format(message.chat.id)].id_city,
+			users["{0}".format(message.chat.id)].num_hotels,
+			users["{0}".format(message.chat.id)].min_price,
+			users["{0}".format(message.chat.id)].max_price,
+			users["{0}".format(message.chat.id)].max_distance,
+			users["{0}".format(message.chat.id)].min_distance)
+		output_message(message, ans)
 
 
-@bot.message_handler(commands=['city'])
-def get_city(message):
-	global name_city, method
-	method = 'city'
-	get_name_city(message)
+# @bot.message_handler(commands=['city'])
+# def get_city(message):
+# 	users["{0}".format(message.chat.id)].method = 'city'
+# 	get_name_city(message)
+#
+#
+# def get_method(message):
+# 	keyboard = telebot.types.InlineKeyboardMarkup()
+# 	key_1 = telebot.types.InlineKeyboardButton(text='Дешевые отели', callback_data='answ|lowprice')
+# 	key_2 = telebot.types.InlineKeyboardButton(text='Дорогие отели', callback_data='answ|highprice')
+# 	keyboard.add(key_1, key_2)
+# # 	# key_3 = telebot.types.InlineKeyboardButton(text='Отели с заданым диапазоном цен и расстоянию от центра',
+# # 	#                                                         callback_data='answ|bestdeal'
+# # 	#                                                 )
+# # 	# keyboard.add(key_3)
+# 	bot.send_message(message.from_user.id, 'Выберите, что мы ищем:', reply_markup=keyboard)
+#
+#
+# @bot.callback_query_handler(func=lambda call: call.data.startswith('answ'))
+# def callback_repl(call):
+# 	text = 'Просматриваю варианты, это займет некоторое время'
+# 	reply = call.data.split('|')
+# 	users["{0}".format(call.message.chat.id)].method = reply[1]
+# 	if users["{0}".format(call.message.chat.id)].method == 'lowprice':
+# 		bot.edit_message_text(
+# 			chat_id=call.message.chat.id,
+# 			message_id=call.message.message_id,
+# 			text="Ищем дешевые отели.\n{}".format(text))
+# 		lowprice_message(call.message)
+# # 	elif method == 'highprice':
+# # 		bot.edit_message_text(
+# # 			chat_id=call.message.chat.id,
+# # 			message_id=call.message.message_id,
+# # 			text="Ищем дорогие отели.\n{}".format(text))
+# # 		highprice_message(call)
+# #
+#
+# # elif method == 'bestdeal':
+# #     bot.edit_message_text(chat_id=call.message.chat.id,
+# #                           message_id=call.message.message_id,
+# #                           text="Ищем отели с заданым диапазоном цен и расстоянию от центра.\n{}".
+# #                           format(text)
+# #                           )
+# #     bestdeal_city(call.message)
+#
+#
+# @bot.message_handler(content_types=['text'])
+# def get_text_messages(message):
+# 	if message.text.lower() == "привет":
+# 		bot.send_message(message.from_user.id, "Привет, чем я могу тебе помочь?")
+# 	elif not message.text.startswith('/'):
+# 		get_answer_city(message)
 
 
-def get_method(message):
-	keyboard = telebot.types.InlineKeyboardMarkup()
-	key_1 = telebot.types.InlineKeyboardButton(text='Дешевые отели', callback_data='answ|lowprice')
-	key_2 = telebot.types.InlineKeyboardButton(text='Дорогие отели', callback_data='answ|highprice')
-	keyboard.add(key_1, key_2)
-	# key_3 = telebot.types.InlineKeyboardButton(text='Отели с заданым диапазоном цен и расстоянию от центра',
-	#                                                         callback_data='answ|bestdeal'
-	#                                                 )
-	# keyboard.add(key_3)
-	bot.send_message(message.from_user.id, 'Выберите, что мы ищем:', reply_markup=keyboard)
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith('answ'))
-def callback_repl(call):
-	global method, name_city, id_city
-	text = 'Просматриваю варианты, это займет некоторое время'
-	reply = call.data.split('|')
-	method = reply[1]
-	if method == 'lowprice':
-		bot.edit_message_text(
-			chat_id=call.message.chat.id,
-			message_id=call.message.message_id,
-			text="Ищем дешевые отели.\n{}".format(text))
-		lowprice_message(call)
-	elif method == 'highprice':
-		bot.edit_message_text(
-			chat_id=call.message.chat.id,
-			message_id=call.message.message_id,
-			text="Ищем дорогие отели.\n{}".format(text))
-		highprice_message(call)
-
-
-# elif method == 'bestdeal':
-#     bot.edit_message_text(chat_id=call.message.chat.id,
-#                           message_id=call.message.message_id,
-#                           text="Ищем отели с заданым диапазоном цен и расстоянию от центра.\n{}".
-#                           format(text)
-#                           )
-#     bestdeal_city(call.message)
-
-
-@bot.message_handler(content_types=['text'])
-def get_text_messages(message):
-	if message.text.lower() == "привет":
-		bot.send_message(message.from_user.id, "Привет, чем я могу тебе помочь?")
-	elif not message.text.startswith('/'):
-		get_answer_city(message)
-
-
-bot.polling(none_stop=True, interval=0)
+if __name__ == '__main__':
+	logger.add(
+		'debug.log',
+		format="{time} {level} {message}",
+		level="DEBUG",
+		rotation='00:00',
+		compression='zip'
+	)
+	bot.polling(none_stop=True, interval=0)
+	while 1:
+		try:
+			bot.polling(none_stop=True, interval=0)
+		except Exception as e:
+			logger.exception('Возникла ошибка {}'.format(e))
