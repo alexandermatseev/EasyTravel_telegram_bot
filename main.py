@@ -131,7 +131,7 @@ def get_answer_num_hotels(message):
 			bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
 			highprice_message(message)
 		elif User.users[message.chat.id].method == 'bestdeal':
-			get_min_price(message)
+			bestdeal_city(message)
 		else:
 			get_method(message)
 
