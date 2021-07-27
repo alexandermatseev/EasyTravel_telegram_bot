@@ -29,4 +29,4 @@ def low_price(id_city, num):
 		result = output_answer(new_list)
 		return result
 	except ValueError:
-		return 'Введено не корректное количество отелей, проверьте правильность ввода.'
+		return 'Возникла ошибка, проверьте правильность ввода.'
