@@ -265,7 +265,7 @@ def bestdeal_city(message) -> None:
 @logger.catch
 def answer_min_price(message) -> None:
 	"""
-	Функция орабатывает ввод пользователя на вопрос о минимальной цене.
+	Функция вопрос о минимальной цене.
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
@@ -275,6 +275,11 @@ def answer_min_price(message) -> None:
 
 
 def get_min_price(message) -> None:
+	"""
+	Функция обрабатывает сообщение о минимальной цене
+	:param message: Сообщение от пользователя
+	:return: None
+	"""
 	if not message.text.isdigit():
 		bot.send_message(message.from_user.id, "Ощибка, введите корректную цену в рублях\n"
 											   "Пример ввода: 500")
@@ -292,7 +297,7 @@ def get_min_price(message) -> None:
 @logger.catch
 def answer_max_price(message) -> None:
 	"""
-	Функция орабатывает ввод пользователя на вопрос о максимальной цене.
+	Функция о максимальной цене.
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
@@ -302,6 +307,11 @@ def answer_max_price(message) -> None:
 
 
 def get_max_price(message) -> None:
+	"""
+	Функция обрабатывает сообщение о максимальной цене
+	:param message: Сообщение от пользователя
+	:return: None
+	"""
 	if not message.text.isdigit():
 		bot.send_message(message.from_user.id, "Ощибка, введите корректную цену в рублях\n"
 											   "Пример ввода: 500")
@@ -325,7 +335,7 @@ def get_max_price(message) -> None:
 @logger.catch
 def answer_min_distance(message) -> None:
 	"""
-	Функция орабатывает ввод пользователя на вопрос о минимальном расстоянии.
+	Функция вопрос о минимальном расстоянии.
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
@@ -334,6 +344,11 @@ def answer_min_distance(message) -> None:
 
 
 def get_min_distance(message):
+	"""
+	Функция орабатывает ввод пользователя на вопрос о минимальном расстоянии.
+	:param message: Сообщение от пользователя
+	:return: None
+	"""
 	if not message.text.isdigit():
 		bot.send_message(message.from_user.id, "Ощибка, введите корректное расстояние в км\n"
 											   "Пример ввода: 2")
@@ -348,6 +363,11 @@ def get_min_distance(message):
 
 
 def answer_max_distance(message) -> None:
+	"""
+	Функция вопрос о максимальном расстоянии
+	:param message: Сообщение от пользователя
+	:return: None
+	"""
 	bot.send_message(message.from_user.id, "Укажите максимальное расстояние отеля до центра в км")
 	bot.register_next_step_handler(message, bestdeal_message)
 
