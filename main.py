@@ -475,16 +475,15 @@ def get_text_messages(message) -> None:
 	elif not message.text.startswith('/'):
 		get_answer_city(message)
 
-bot.polling(none_stop=True, interval=0)
-#
-# if __name__ == '__main__':
-# 	logger.add('bot_debug.log', format="{time} {level} {message}", level="DEBUG",
-# 			   rotation='00:00',
-# 			   compression='zip',
-# 			   encoding='UTF-8')
-# 	logger.info("Запуск бота")
-# 	while 1:
-# 		try:
-# 			bot.polling(none_stop=True, interval=0)
-# 		except Exception as e:
-# 			logger.error('Возникла ошибка {}'.format(e))
+
+if __name__ == '__main__':
+	logger.add('bot_debug.log', format="{time} {level} {message}", level="DEBUG",
+			   rotation='00:00',
+			   compression='zip',
+			   encoding='UTF-8')
+	logger.info("Запуск бота")
+	while 1:
+		try:
+			bot.polling(none_stop=True, interval=0)
+		except Exception as e:
+			logger.error('Возникла ошибка {}'.format(e))
