@@ -9,7 +9,25 @@ headers = {
 }
 
 
-def best_deal(id_city, num, min_price, max_price, max_dist, min_dist=0):
+def best_deal(
+		id_city: str,
+		num: str,
+		min_price: str,
+		max_price: str,
+		max_dist: str,
+		min_dist: str
+) -> list:
+	"""
+	Функция которая делает запрос с заданными параметрами минимальной и мкасимальной ценой и
+	минимальным и максимальным расстоянием.
+	:param id_city: str
+	:param num: str
+	:param min_price: str
+	:param max_price: str
+	:param max_dist: str
+	:param min_dist: str
+	:return: list
+	"""
 	num = int(num)
 	page_num = 1
 	result_list = []

@@ -1,7 +1,7 @@
 import os
 import requests
 
-from commands.output_answer import output_answer
+from .output_answer import output_answer
 
 url = "https://hotels4.p.rapidapi.com/properties/list"
 
@@ -11,7 +11,15 @@ headers = {
 }
 
 
-def high_price(id_city, num):
+def get_price(id_city, num, sort_order):
+	"""
+	Функция совершает запрос через Api с параметрами город и количество отелей и
+	сортировкой - первые отели самые дешевые, потом возвращает список отелей.
+	:param sort_order: str
+	:param id_city: str
+	:param num: str
+	:return: list or str
+	"""
 	querystring = {
 		"adults1": "1",
 		"pageNumber": "1",
@@ -19,10 +27,9 @@ def high_price(id_city, num):
 		"pageSize": "25",
 		"checkOut": "2020-01-15",
 		"checkIn": "2020-01-08",
-		"sortOrder": "PRICE_HIGHEST_FIRST",
+		"sortOrder": sort_order,
 		"locale": "ru_Ru",
-		"currency": "RUB"
-	}
+		"currency": "RUB"}
 	try:
 		num = int(num)
 		response = requests.request("GET", url, headers=headers, params=querystring).json()
@@ -31,3 +38,4 @@ def high_price(id_city, num):
 		return result
 	except ValueError:
 		return 'Возникла ошибка, проверьте правильность ввода.'
+
