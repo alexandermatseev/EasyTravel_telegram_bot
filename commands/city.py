@@ -1,4 +1,6 @@
 import os
+from typing import Type
+
 import requests
 import re
 
@@ -16,15 +18,22 @@ headers = {
     }
 
 
-def get_city(city):
+def get_city(city: str) -> dict or str:
+    """
+    Функция, которая реализует поиск города через запрос к Api.
+    Выводит словарь где ключ это id города, а значение это название города
+    :param city: str
+    :return: dict or str
+    """
+    locale = 'ru_RU' if re.match(r'[А-Яа-яЁё]+', city) else 'en_US'
     city = city.capitalize()
-    querystring = {"query": city, "locale": "ru_RU"}
+    querystring = {"query": city, "locale": locale}
     response = requests.request("GET", url, headers=headers, params=querystring)
     data = response.json()
     if response.status_code != 200:
         return 'Простите, я не могу найти информацию по отелям в этом городе. Свяжитесь с оператором'
     if data["moresuggestions"] == 0:
-        return 'Не могу найти такой город,\n'\
+        return 'Произошла ошибка,\n'\
                'Попробуйте снова:\n1) Введите навание города на русском языке.\n' \
                '2) Убедитесь что город введен верно\n' \
                'Например: Москва\n' \
