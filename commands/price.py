@@ -1,7 +1,7 @@
 import os
 import requests
 
-from .output_answer import output_answer
+from .output import output_answer
 
 url = "https://hotels4.p.rapidapi.com/properties/list"
 
@@ -11,19 +11,20 @@ headers = {
 }
 
 
-def get_price(id_city, num, sort_order):
+def get_price(vars_dict):
 	"""
 	Функция совершает запрос через Api с параметрами город и количество отелей и
 	сортировкой - первые отели самые дешевые, потом возвращает список отелей.
-	:param sort_order: str
-	:param id_city: str
-	:param num: str
+	:param vars_dict: dict[str]:str
 	:return: list or str
 	"""
+	sort_order = "PRICE"
+	if vars_dict['method'] == 'highprice':
+		sort_order = "PRICE_HIGHEST_FIRST"
 	querystring = {
 		"adults1": "1",
 		"pageNumber": "1",
-		"destinationId": str(id_city),
+		"destinationId": str(vars_dict['id_city']),
 		"pageSize": "25",
 		"checkOut": "2020-01-15",
 		"checkIn": "2020-01-08",
@@ -31,7 +32,7 @@ def get_price(id_city, num, sort_order):
 		"locale": "ru_Ru",
 		"currency": "RUB"}
 	try:
-		num = int(num)
+		num = int(vars_dict['num_hotels'])
 		response = requests.request("GET", url, headers=headers, params=querystring).json()
 		new_list = response['data']['body']['searchResults']["results"][:num]
 		result = output_answer(new_list)
