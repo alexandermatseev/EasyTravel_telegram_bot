@@ -21,11 +21,11 @@ headers = {
 
 def get_city(city: str) -> dict or str:
 	"""
-    Функция, которая реализует поиск города через запрос к Api.
-    Выводит словарь где ключ это id города, а значение это название города
-    :param city: str
-    :return: dict or str
-    """
+	Функция, которая реализует поиск города через запрос к Api.
+	Выводит словарь где ключ это id города, а значение это название города
+	:param city: str
+	:return: dict or str
+	"""
 	locale = 'ru_RU' if re.match(r'[А-Яа-яЁё]+', city) else 'en_US'
 	city = city.capitalize()
 	querystring = {"query": city, "locale": locale}
@@ -45,18 +45,20 @@ def get_city(city: str) -> dict or str:
 			if item['type'] == 'CITY' and item['name'] == city}
 
 
-def get_answer_city(message, User, bot) -> None:
+def get_answer_city(message, user, bot) -> None:
 	"""
 	Функция - оброботчик сообщения о названии города.
+	:param bot:
+	:param user:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	try:
 		text_button = 'Возможные варианты:'
 		keyboard = telebot.types.InlineKeyboardMarkup()
-		for i_city in User.users[message.chat.id].city_dict:
+		for i_city in user[message.chat.id].city_dict:
 			keyboard.add(telebot.types.InlineKeyboardButton(
-				text=User.users[message.chat.id].city_dict[i_city],
+				text=user[message.chat.id].city_dict[i_city],
 				callback_data='|' + i_city))
 		bot.send_message(message.from_user.id, text_button, reply_markup=keyboard)
 	except (ValueError, KeyError):

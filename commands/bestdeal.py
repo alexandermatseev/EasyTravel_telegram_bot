@@ -39,14 +39,13 @@ def best_deal(user_vars: dict) -> list or str:
 
 		response = requests.request("GET", url, headers=headers, params=querystring).json()
 		new_list = response['data']['body']["searchResults"]["results"][:num]
-		print()
 
 		for i in range(len(new_list)):
 			res_dict = dict()
 			distance_value = new_list[i].get('landmarks')[0].get('distance')[:-6]
 			distance_value = round(float(distance_value) * 1.61, 2)
-			if (float(distance_value) < float(user_vars['min_distance'])) \
-					or (float(user_vars['max_distance']) < float(distance_value)):
+			if ((float(distance_value) < float(user_vars['min_distance']))
+					or (float(user_vars['max_distance']) < float(distance_value))):
 				continue
 			else:
 				res_dict['distance'] = str(distance_value)
@@ -69,139 +68,153 @@ def best_deal(user_vars: dict) -> list or str:
 	return result_list
 
 
-def answer_min_price(message, User, bot) -> None:
+def answer_min_price(message, user, bot) -> None:
 	"""
 	Функция вопрос о минимальной цене.
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	message = bot.send_message(User.users[message.chat.id].chat_id,
+	message = bot.send_message(user[message.chat.id].chat_id,
 					 "Укажите минимальную цену отеля за ночь (руб)")
-	bot.register_next_step_handler(message, get_min_price, User, bot)
+	bot.register_next_step_handler(message, get_min_price, user, bot)
 
 
-def get_min_price(message, User, bot) -> None:
+def get_min_price(message, user, bot) -> None:
 	"""
 	Функция обрабатывает сообщение о минимальной цене
+	:param bot:
+	:param user:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
-		bot.send_message(User.users[message.chat.id].chat_id, "Ощибка, введите корректную цену в рублях\n"
+		bot.send_message(user[message.chat.id].chat_id, "Ощибка, введите корректную цену в рублях\n"
 											   "Пример ввода: 500")
-		answer_min_price(message, User, bot)
+		answer_min_price(message, user, bot)
 	elif int(message.text) < 0:
-		bot.send_message(User.users[message.chat.id].chat_id, "Введите положительное число\n"
+		bot.send_message(user[message.chat.id].chat_id, "Введите положительное число\n"
 											   "Пример ввода: 500")
-		answer_min_price(message, User, bot)
+		answer_min_price(message, user, bot)
 	else:
-		User.users[message.chat.id].user_vars['min_price'] = message.text
-		answer_max_price(message, User, bot)
+		user[message.chat.id].user_vars['min_price'] = message.text
+		answer_max_price(message, user, bot)
 
 
 @logger.catch
-def answer_max_price(message, User, bot) -> None:
+def answer_max_price(message, user, bot) -> None:
 	"""
 	Функция о максимальной цене.
+	:param bot:
+	:param user:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	bot.send_message(message.from_user.id, "Укажите максимальную цену отеля за ночь (руб)")
-	bot.register_next_step_handler(message, get_max_price, User, bot)
+	bot.register_next_step_handler(message, get_max_price, user, bot)
 
 
-def get_max_price(message, User, bot) -> None:
+def get_max_price(message, user, bot) -> None:
 	"""
 	Функция обрабатывает сообщение о максимальной цене
+	:param bot:
+	:param user:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
 		bot.send_message(message.from_user.id, "Ощибка, введите корректную цену в рублях\n"
 											   "Пример ввода: 500")
-		answer_max_price(message, User, bot)
+		answer_max_price(message, user, bot)
 	elif int(message.text) < 0:
 		bot.send_message(message.from_user.id, "Введите положительное число\n"
 											   "Пример ввода: 500")
-		answer_max_price(message, User, bot)
+		answer_max_price(message, user, bot)
 	else:
-		if int(User.users[message.chat.id].user_vars['min_price']) > int(message.text):
+		if int(user[message.chat.id].user_vars['min_price']) > int(message.text):
 			bot.send_message(message.from_user.id,
 							 "Вы перепутали максималюную и минимальную цену местами, но я все исправил")
-			User.users[message.chat.id].user_vars['max_price'] = User.users[message.chat.id].user_vars['min_price']
-			User.users[message.chat.id].user_vars['min_price'] = message.text
-			answer_max_price(message, User, bot)
+			user[message.chat.id].user_vars['max_price'] = user[message.chat.id].user_vars['min_price']
+			user[message.chat.id].user_vars['min_price'] = message.text
+			answer_max_price(message, user, bot)
 		else:
-			User.users[message.chat.id].user_vars['max_price'] = message.text
-			answer_min_distance(message, User, bot)
+			user[message.chat.id].user_vars['max_price'] = message.text
+			answer_min_distance(message, user, bot)
 
 
 @logger.catch
-def answer_min_distance(message, User, bot) -> None:
+def answer_min_distance(message, user, bot) -> None:
 	"""
 	Функция вопрос о минимальном расстоянии.
+	:param bot:
+	:param User:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	bot.send_message(message.from_user.id, "Укажите минимальное расстояние отеля до центра в км")
-	bot.register_next_step_handler(message, get_min_distance, User, bot)
+	bot.register_next_step_handler(message, get_min_distance, user, bot)
 
 
-def get_min_distance(message, User, bot):
+def get_min_distance(message, user, bot):
 	"""
 	Функция орабатывает ввод пользователя на вопрос о минимальном расстоянии.
+	:param bot:
+	:param User:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
 		bot.send_message(message.from_user.id, "Ощибка, введите корректное расстояние в км\n"
 											   "Пример ввода: 2")
-		answer_min_distance(message, User, bot)
+		answer_min_distance(message, user, bot)
 	elif int(message.text) < 0:
 		bot.send_message(message.from_user.id, "Введите положительное число\n"
 											   "Пример ввода: 3")
-		answer_min_distance(message, User, bot)
+		answer_min_distance(message, user, bot)
 	else:
-		User.users[message.chat.id].user_vars['min_distance'] = message.text
-		answer_max_distance(message, User, bot)
+		user.users[message.chat.id].user_vars['min_distance'] = message.text
+		answer_max_distance(message, user, bot)
 
 
-def answer_max_distance(message, User, bot) -> None:
+def answer_max_distance(message, user, bot) -> None:
 	"""
 	Функция вопрос о максимальном расстоянии
+	:param bot:
+	:param user:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	bot.send_message(message.from_user.id, "Укажите максимальное расстояние отеля до центра в км")
-	bot.register_next_step_handler(message, bestdeal_message, User, bot)
+	bot.register_next_step_handler(message, bestdeal_message, user, bot)
 
 
 @logger.catch
-def bestdeal_message(message, User, bot) -> None:
+def bestdeal_message(message, user, bot) -> None:
 	"""
 	Функция обратбатывает ввод пользователя о максимальном расстоянии.
+	:param bot:
+	:param User:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
 		bot.send_message(message.from_user.id, "Ощибка, введите корректное расстояние в км\n"
 											   "Пример ввода: 5")
-		answer_max_distance(message, User, bot)
+		answer_max_distance(message, user, bot)
 	elif int(message.text) < 0:
 		bot.send_message(message.from_user.id, "Введите положительное число\n"
 											   "Пример ввода: 3")
-		answer_max_distance(message, User, bot)
+		answer_max_distance(message, user, bot)
 	else:
-		if int(User.users[message.chat.id].user_vars['min_distance']) > int(message.text):
+		if int(user[message.chat.id].user_vars['min_distance']) > int(message.text):
 			bot.send_message(message.from_user.id,
 							 "Вы перепутали максимальное и минимальное расстояние местами, но я все исправил"
 							 )
-			User.users[message.chat.id].user_vars['max_distance'] = \
-				User.users[message.chat.id].user_vars['min_distance']
-			User.users[message.chat.id].user_vars['min_distance'] = message.text
+			user[message.chat.id].user_vars['max_distance'] = \
+				user[message.chat.id].user_vars['min_distance']
+			user[message.chat.id].user_vars['min_distance'] = message.text
 			bestdeal_message(message)
 		else:
-			User.users[message.chat.id].user_vars['max_distance'] = message.text
+			user[message.chat.id].user_vars['max_distance'] = message.text
 		bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
-		ans = best_deal(User.users[message.chat.id].user_vars,)
-		output.output_message(message, ans, bot, User)
+		ans = best_deal(user[message.chat.id].user_vars,)
+		output.output_message(message, ans, bot, user)
