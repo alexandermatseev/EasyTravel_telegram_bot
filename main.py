@@ -43,7 +43,8 @@ def greetings(message) -> None:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	user = User.get_user(message.chat.id, message.from_user.first_name)
+	users = User.get_user(message.chat.id, message.from_user.first_name)
+	user = users[message.chat.id]
 	bot.send_message(
 		user[message.chat.id].chat_id,
 		text=f"{user[message.chat.id].first_name}, "
@@ -64,7 +65,7 @@ def help_command(message, user) -> None:
 	keyboard.add(
 		telebot.types.InlineKeyboardButton('Сообщить об ошибке', url='telegram.me/almatseev'))
 	bot.send_message(
-		user[message.chat.id].chat_id,
+		user.chat_id,
 		'1) Для начала работы нужно выбрать город. Введи /city.\n'
 		'2) Я могу выводить информацию о самых дешевых отелях в выбранном городе. Введи /lowprice.\n'
 		'3) Я могу выводить информацию о самых дорогих отелях в выбранном городе. Введи /highprice.\n'
@@ -74,13 +75,13 @@ def help_command(message, user) -> None:
 
 @bot.message_handler(commands=['city'])
 @logger.catch
-def get_name_city(message) -> None:
+def get_name_city(message, user) -> None:
 	"""
 	Функция, которая запрашивает у пользователя название города
 	:param message: Сообщение от пользователя
 	:return:
 	"""
-	bot.send_message(User.users[message.chat.id].chat_id, 'Введите город для поиска отеля')
+	bot.send_message(user.chat_id, 'Введите город для поиска отеля')
 	bot.register_next_step_handler(message, get_answer_city)
 
 
@@ -93,11 +94,11 @@ def get_answer_city(message, user) -> None:
 	:return: None
 	"""
 	try:
-		user[message.chat.id].city_dict = city.get_city(message.text)
-		if isinstance(user[message.chat.id].city_dict, dict):
+		user.city_dict = city.get_city(message.text)
+		if isinstance(user.city_dict, dict):
 			city.get_answer_city(message, user, bot)
-		elif isinstance(user[message.chat.id].city_dict, str):
-			bot.send_message(message.from_user.id, user[message.chat.id].city_dict)
+		elif isinstance(user.city_dict, str):
+			bot.send_message(message.from_user.id, user.city_dict)
 			get_name_city(message)
 	except (ValueError, KeyError):
 		bot.send_message(message.from_user.id, 'Произошла ошибка, мне нужно перезагрузится')
@@ -113,9 +114,9 @@ def callback_worker(call, user) -> None:
 	:param call: Результат данных с клавиатуры
 	:return: None
 	"""
-	user[call.message.chat.id].user_vars['id_city'] = call.data[1:]
+	user.user_vars['id_city'] = call.data[1:]
 	bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-						  text=f"Выбран город {user[call.message.chat.id].city_dict[call.data[1:]]}")
+						  text=f"Выбран город {user.city_dict[call.data[1:]]}")
 	bot.send_message(chat_id=call.message.chat.id,
 					 text="Сколько отелей ищем? (Я могу найти до 25-ти отелей)")
 
@@ -139,22 +140,22 @@ def get_answer_num_hotels(message,user) -> None:
 	:param message: Сообщение от пользователя
 	:return:
 	"""
-	user[message.chat.id].user_vars['num_hotels'] = message.text
+	user.user_vars['num_hotels'] = message.text
 	try:
-		if ((user[message.chat.id].user_vars['num_hotels'].isalpha())
-				or (0 >= int(user[message.chat.id].user_vars['num_hotels']))
-				or (25 < int(user[message.chat.id].user_vars['num_hotels']))):
+		if ((user.user_vars['num_hotels'].isalpha())
+				or (0 >= int(user.user_vars['num_hotels']))
+				or (25 < int(user.user_vars['num_hotels']))):
 			bot.send_message(
 				message.from_user.id,
 				"Вы ввели не коректное число отелей, попробуйте снова( нужно ввести целое число, например 5)"
 			)
 			get_num_hotels(message)
 		else:
-			if (user[message.chat.id].user_vars['method'] == 'lowprice'
-					or (user[message.chat.id].user_vars['method'] == 'highprice')):
+			if (user.user_vars['method'] == 'lowprice'
+					or (user.user_vars['method'] == 'highprice')):
 				bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
 				get_price(message)
-			elif user[message.chat.id].user_vars['method'] == 'bestdeal':
+			elif user.user_vars['method'] == 'bestdeal':
 				bestdeal.answer_min_price(message, user, bot)
 			else:
 				get_method(message, user)
@@ -171,7 +172,7 @@ def get_method(message, user) -> None:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	user[message.chat.id].is_city = True
+	user.is_city = True
 	keyboard = telebot.types.InlineKeyboardMarkup()
 	key_1 = telebot.types.InlineKeyboardButton(text='Дешевые отели', callback_data='answ|lowprice')
 	key_2 = telebot.types.InlineKeyboardButton(text='Дорогие отели', callback_data='answ|highprice')
@@ -191,14 +192,14 @@ def callback_repl(call, user) -> None:
 	"""
 	text = 'Просматриваю варианты, это займет некоторое время'
 	reply = call.data.split('|')
-	user[call.message.chat.id].user_vars['method'] = reply[1]
-	if (user[call.message.chat.id].user_vars['method'] == 'lowprice'
-			or(user[call.message.chat.id].user_vars['method'] == 'highprice')):
+	user.user_vars['method'] = reply[1]
+	if (user.user_vars['method'] == 'lowprice'
+			or(user.user_vars['method'] == 'highprice')):
 		bot.edit_message_text(chat_id=call.message.chat.id,
 							  message_id=call.message.message_id,
 							  text=f"Произвожу поиск.\n{text}")
 		get_price(call.message)
-	elif user[call.message.chat.id].user_vars['method'] == 'bestdeal':
+	elif user.user_vars['method'] == 'bestdeal':
 		bot.edit_message_text(chat_id=call.message.chat.id,
 							  message_id=call.message.message_id,
 							  text=f"Ищем отели с заданым диапазоном цен и расстоянию от центра.\n"
@@ -220,7 +221,7 @@ def method_sort(message, user) -> None:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	user[message.chat.id].user_vars['method'] = message.text[1:]
+	user.user_vars['method'] = message.text[1:]
 	get_name_city(message)
 
 
@@ -231,7 +232,7 @@ def get_price(message, user) -> None:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	ans = price.get_price(user[message.chat.id].user_vars)
+	ans = price.get_price(user.user_vars)
 	if isinstance(ans, list):
 		output.output_message(message, ans, bot, user)
 	else:
@@ -247,8 +248,8 @@ def bestdeal_city(message, user) -> None:
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	if user[message.chat.id].user_vars['id_city'] is None:
-		user[message.chat.id].user_vars['method'] = 'bestdeal'
+	if user.user_vars['id_city'] is None:
+		user.user_vars['method'] = 'bestdeal'
 		get_name_city(message)
 	else:
 		bestdeal.answer_min_price(message, user, bot)
