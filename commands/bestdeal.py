@@ -1,8 +1,12 @@
 import os
+from typing import Callable
+
 import requests
+import telebot
 from loguru import logger
 
 from commands import output
+
 
 url = "https://hotels4.p.rapidapi.com/properties/list"
 
@@ -37,7 +41,9 @@ def best_deal(user_vars: dict) -> list or str:
 			"priceMin": str(user_vars['min_price'])
 		}
 
-		response = requests.request("GET", url, headers=headers, params=querystring).json()
+		response = requests.request(
+			"GET", url, headers=headers, params=querystring
+		).json()
 		new_list = response['data']['body']["searchResults"]["results"][:num]
 
 		for i in range(len(new_list)):
@@ -68,153 +74,223 @@ def best_deal(user_vars: dict) -> list or str:
 	return result_list
 
 
-def answer_min_price(message, user, bot) -> None:
+def answer_min_price(user, bot: telebot.TeleBot) -> None:
 	"""
 	Функция вопрос о минимальной цене.
-	:param message: Сообщение от пользователя
+	:param bot: объект TeleBot
+	:param user: объект класса User
 	:return: None
 	"""
-	message = bot.send_message(user[message.chat.id].chat_id,
-					 "Укажите минимальную цену отеля за ночь (руб)")
+	message = bot.send_message(
+		user.chat_id,
+		f"Укажите минимальную цену отеля за ночь (руб)")
 	bot.register_next_step_handler(message, get_min_price, user, bot)
 
 
-def get_min_price(message, user, bot) -> None:
+def get_min_price(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция обрабатывает сообщение о минимальной цене
-	:param bot:
-	:param user:
+	:param bot: объект TeleBot
+	:param user: объект класса User
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
-		bot.send_message(user[message.chat.id].chat_id, "Ощибка, введите корректную цену в рублях\n"
-											   "Пример ввода: 500")
-		answer_min_price(message, user, bot)
+		bot.send_message(
+			user.chat_id,
+			f"Ощибка, введите корректную цену в рублях\n"
+			f"Пример ввода: 500"
+		)
+		answer_min_price(user, bot)
 	elif int(message.text) < 0:
-		bot.send_message(user[message.chat.id].chat_id, "Введите положительное число\n"
-											   "Пример ввода: 500")
-		answer_min_price(message, user, bot)
+		bot.send_message(
+			user.chat_id,
+			f"Введите положительное число\n"
+			f"Пример ввода: 500"
+		)
+		answer_min_price(user, bot)
 	else:
-		user[message.chat.id].user_vars['min_price'] = message.text
+		user.user_vars['min_price'] = message.text
 		answer_max_price(message, user, bot)
 
 
 @logger.catch
-def answer_max_price(message, user, bot) -> None:
+def answer_max_price(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция о максимальной цене.
-	:param bot:
-	:param user:
+	:param bot: объект TeleBot
+	:param user: объект класса User
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	bot.send_message(message.from_user.id, "Укажите максимальную цену отеля за ночь (руб)")
+	bot.send_message(
+		message.from_user.id,
+		"Укажите максимальную цену отеля за ночь (руб)"
+	)
 	bot.register_next_step_handler(message, get_max_price, user, bot)
 
 
-def get_max_price(message, user, bot) -> None:
+def get_max_price(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция обрабатывает сообщение о максимальной цене
-	:param bot:
-	:param user:
+	:param bot: объект TeleBot
+	:param user: объект класса User
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
-		bot.send_message(message.from_user.id, "Ощибка, введите корректную цену в рублях\n"
-											   "Пример ввода: 500")
+		bot.send_message(
+			message.from_user.id,
+			f"Ощибка, введите корректную цену в рублях\n"
+			f"Пример ввода: 500"
+		)
 		answer_max_price(message, user, bot)
 	elif int(message.text) < 0:
-		bot.send_message(message.from_user.id, "Введите положительное число\n"
-											   "Пример ввода: 500")
+		bot.send_message(
+			message.from_user.id,
+			f"Введите положительное число\n"
+			f"Пример ввода: 500"
+		)
 		answer_max_price(message, user, bot)
 	else:
-		if int(user[message.chat.id].user_vars['min_price']) > int(message.text):
-			bot.send_message(message.from_user.id,
-							 "Вы перепутали максималюную и минимальную цену местами, но я все исправил")
-			user[message.chat.id].user_vars['max_price'] = user[message.chat.id].user_vars['min_price']
-			user[message.chat.id].user_vars['min_price'] = message.text
-			answer_max_price(message, user, bot)
+		if int(user.user_vars['min_price']) > int(message.text):
+			bot.send_message(
+				message.from_user.id,
+				f"Вы перепутали максималюную и минимальную цену местами, но я все исправил"
+			)
+			user.user_vars['max_price'] = user.user_vars['min_price']
+			user.user_vars['min_price'] = message.text
+			answer_max_price(user, message, bot)
 		else:
-			user[message.chat.id].user_vars['max_price'] = message.text
+			user.user_vars['max_price'] = message.text
 			answer_min_distance(message, user, bot)
 
 
 @logger.catch
-def answer_min_distance(message, user, bot) -> None:
+def answer_min_distance(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция вопрос о минимальном расстоянии.
-	:param bot:
-	:param User:
+	:param user: объект класса User
+	:param bot: объект TeleBot
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	bot.send_message(message.from_user.id, "Укажите минимальное расстояние отеля до центра в км")
+	bot.send_message(
+		message.from_user.id,
+		"Укажите минимальное расстояние отеля до центра в км"
+	)
 	bot.register_next_step_handler(message, get_min_distance, user, bot)
 
 
-def get_min_distance(message, user, bot):
+def get_min_distance(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция орабатывает ввод пользователя на вопрос о минимальном расстоянии.
-	:param bot:
-	:param User:
+	:param user: объект класса User
+	:param bot: объект TeleBot
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
-		bot.send_message(message.from_user.id, "Ощибка, введите корректное расстояние в км\n"
-											   "Пример ввода: 2")
+		bot.send_message(
+			message.from_user.id,
+			f"Ощибка, введите корректное расстояние в км\n"
+			f"Пример ввода: 2"
+		)
 		answer_min_distance(message, user, bot)
 	elif int(message.text) < 0:
-		bot.send_message(message.from_user.id, "Введите положительное число\n"
-											   "Пример ввода: 3")
+		bot.send_message(
+			message.from_user.id,
+			f"Введите положительное число\n"
+			f"Пример ввода: 3"
+		)
 		answer_min_distance(message, user, bot)
 	else:
-		user.users[message.chat.id].user_vars['min_distance'] = message.text
+		user.user_vars['min_distance'] = message.text
 		answer_max_distance(message, user, bot)
 
 
-def answer_max_distance(message, user, bot) -> None:
+def answer_max_distance(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция вопрос о максимальном расстоянии
-	:param bot:
-	:param user:
+	:param bot: объект TeleBot
+	:param user: объект класса User
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	bot.send_message(message.from_user.id, "Укажите максимальное расстояние отеля до центра в км")
+	bot.send_message(
+		message.from_user.id,
+		f"Укажите максимальное расстояние отеля до центра в км"
+	)
 	bot.register_next_step_handler(message, bestdeal_message, user, bot)
 
 
 @logger.catch
-def bestdeal_message(message, user, bot) -> None:
+def bestdeal_message(
+		message: telebot.types.Message,
+		user,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция обратбатывает ввод пользователя о максимальном расстоянии.
-	:param bot:
-	:param User:
+	:param user: объект класса User
+	:param bot: объект TeleBot
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
 	if not message.text.isdigit():
-		bot.send_message(message.from_user.id, "Ощибка, введите корректное расстояние в км\n"
-											   "Пример ввода: 5")
-		answer_max_distance(message, user, bot)
+		bot.send_message(
+			message.from_user.id,
+			f"Ощибка, введите корректное расстояние в км\n"
+			f"Пример ввода: 5"
+		)
+		answer_max_distance(user, message, bot)
 	elif int(message.text) < 0:
-		bot.send_message(message.from_user.id, "Введите положительное число\n"
-											   "Пример ввода: 3")
+		bot.send_message(
+			message.from_user.id,
+			f"Введите положительное число\n"
+			f"Пример ввода: 3"
+		)
 		answer_max_distance(message, user, bot)
 	else:
-		if int(user[message.chat.id].user_vars['min_distance']) > int(message.text):
-			bot.send_message(message.from_user.id,
-							 "Вы перепутали максимальное и минимальное расстояние местами, но я все исправил"
-							 )
-			user[message.chat.id].user_vars['max_distance'] = \
-				user[message.chat.id].user_vars['min_distance']
-			user[message.chat.id].user_vars['min_distance'] = message.text
+		if int(user.user_vars['min_distance']) > int(message.text):
+			bot.send_message(
+				message.from_user.id,
+				f"Вы перепутали максимальное и минимальное расстояние местами, но я все исправил"
+				)
+			user.user_vars['max_distance'] = \
+				user.user_vars['min_distance']
+			user.user_vars['min_distance'] = message.text
 			bestdeal_message(message)
 		else:
-			user[message.chat.id].user_vars['max_distance'] = message.text
-		bot.send_message(message.from_user.id, "Просматриваю варианты, это займет некоторое время")
-		ans = best_deal(user[message.chat.id].user_vars,)
-		output.output_message(message, ans, bot, user)
+			user.user_vars['max_distance'] = message.text
+		bot.send_message(
+			message.from_user.id,
+			"Просматриваю варианты, это займет некоторое время"
+		)
+		ans = best_deal(user.user_vars,)
+		output.output_message(ans, bot, user)
+

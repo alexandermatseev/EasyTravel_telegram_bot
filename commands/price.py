@@ -1,4 +1,6 @@
 import os
+from typing import Union, List, Dict, Any
+
 import requests
 
 from .output import output_answer
@@ -11,11 +13,11 @@ headers = {
 }
 
 
-def get_price(vars_dict):
+def get_price(vars_dict: dict[str:str]) -> Union[List[Dict[str, Union[str, Any]]], str]:
 	"""
 	Функция совершает запрос через Api с параметрами город и количество отелей и
 	сортировкой - первые отели самые дешевые, потом возвращает список отелей.
-	:param vars_dict: dict[str]:str
+	:param vars_dict: dict[str:str]
 	:return: list or str
 	"""
 	sort_order = "PRICE"
@@ -33,7 +35,9 @@ def get_price(vars_dict):
 		"currency": "RUB"}
 	try:
 		num = int(vars_dict['num_hotels'])
-		response = requests.request("GET", url, headers=headers, params=querystring).json()
+		response = requests.request(
+			"GET", url, headers=headers, params=querystring
+		).json()
 		new_list = response['data']['body']['searchResults']["results"][:num]
 		result = output_answer(new_list)
 		return result
