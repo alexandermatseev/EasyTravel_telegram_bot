@@ -13,10 +13,13 @@ headers = {
 }
 
 
-def get_price(vars_dict: dict[str:str]) -> Union[List[Dict[str, Union[str, Any]]], str]:
+def get_price(
+		vars_dict: dict[str:str]
+) -> Union[List[Dict[str, Union[str, Any]]], str]:
 	"""
-	Функция совершает запрос через Api с параметрами город и количество отелей и
-	сортировкой - первые отели самые дешевые, потом возвращает список отелей.
+	Функция совершает запрос через Api с параметрами город
+	и количество отелей и сортировкой - первые отели самые дешевые,
+	потом возвращает список отелей.
 	:param vars_dict: dict[str:str]
 	:return: list or str
 	"""

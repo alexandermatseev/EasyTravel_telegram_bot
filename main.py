@@ -4,37 +4,29 @@ from commands import city, price, bestdeal, output
 from loguru import logger
 
 bot = telebot.TeleBot(os.getenv('TOKEN'))
-command_list = ['/start', '/lowprice', '/help', '/highprice', '/bestdeal', '/city']
 
 
 class User:
-	"""
-	Класс пользователя, содержит в себе словарь всех объектов класса
-	"""
 	users = {}
 
 	def __init__(self, chat_id: int, first_name: str) -> None:
+		self.user_vars = dict.fromkeys(
+			['id_city', 'num_hotels', 'name_city', 'method',
+			 'max_price', 'min_price', 'min_distance', 'max_distance']
+		)
 		self.chat_id = chat_id
 		self.first_name = first_name
-		self.user_vars = User.get_vars(self)
 		self.city_dict = {}
 		self.is_city = False
+		self.set_user(self.chat_id, self)
 
 	@classmethod
-	def get_user(cls, chat_id: int, first_name: str) -> dict:
-		"""
-		Метод который добавляет оъект класса в словарь
-		:param chat_id: int
-		:param first_name: str
-		:return: dict
-		"""
-		cls.users[chat_id] = User(chat_id, first_name)
-		return cls.users
+	def set_user(cls, chat_id: int, user_object) -> None:
+		cls.users[chat_id] = user_object
 
-	def get_vars(self):
-		self.user_vars = dict.fromkeys(['id_city', 'num_hotels', 'name_city', 'method',
-										'max_price', 'min_price', 'min_distance', 'max_distance'])
-		return self.user_vars
+	@classmethod
+	def get_user(cls, chat_id: int):
+		return cls.users[chat_id]
 
 
 @bot.message_handler(commands=['start'])
@@ -44,7 +36,7 @@ def greetings(message: telebot.types.Message) -> None:
 	:param message: telebot.types.Message
 	:return: None
 	"""
-	User.get_user(message.chat.id, message.from_user.first_name)
+	User(message.from_user.id, message.from_user.first_name)
 	bot.send_message(
 		message.from_user.id,
 		text=
@@ -61,11 +53,12 @@ def greetings(message: telebot.types.Message) -> None:
 @bot.message_handler(content_types=['text'])
 def get_text_messages(message: telebot.types.Message) -> None:
 	"""
-	Функция реализует логику бота в зависимости от введенного текста без учета команд.
+	Функция реализует логику бота в зависимости
+	от введенного текста без учета команд.
 	:param message: Сообщение от пользователя
 	:return: None
 	"""
-	user = User.users[message.from_user.id]
+	user = User.get_user(message.from_user.id)
 	if message.text in ['/lowprice', '/highprice']:
 		method_sort(message, user)
 	elif message.text == "/bestdeal":
@@ -83,13 +76,17 @@ def help_command(message) -> None:
 	"""
 	keyboard = telebot.types.InlineKeyboardMarkup()
 	keyboard.add(
-		telebot.types.InlineKeyboardButton('Сообщить об ошибке', url='telegram.me/almatseev'))
+		telebot.types.InlineKeyboardButton(
+			'Сообщить об ошибке',
+			url='telegram.me/almatseev'))
 	text = 'Я могу выводить информацию'
 	bot.send_message(
 		message.from_user.id,
 		f'1) Для начала работы нужно выбрать город. Введи /city.\n'
-		f'2) {text} о самых дешевых отелях в выбранном городе.Введи /lowprice.\n'
-		f'3) {text} о самых дорогих отелях в выбранном городе.Введи /highprice.\n'
+		f'2) {text} о самых дешевых отелях в выбранном городе.'
+		f'Введи /lowprice.\n'
+		f'3) {text} о самых дорогих отелях в выбранном городе.'
+		f'Введи /highprice.\n'
 		f'4)  {text} об отелях, наиболее подходящих по '
 		f'цене и расположению от центра /bestdeal.\n',
 		reply_markup=keyboard)
@@ -124,7 +121,9 @@ def get_answer_city(message: telebot.types.Message, user: User) -> None:
 			bot.send_message(message.from_user.id, user.city_dict)
 			get_name_city(message, user)
 	except (ValueError, KeyError):
-		bot.send_message(message.from_user.id, 'Произошла ошибка, мне нужно перезагрузится')
+		bot.send_message(
+			message.from_user.id,
+			'Произошла ошибка, мне нужно перезагрузится')
 		greetings(message)
 
 
@@ -137,7 +136,7 @@ def callback_worker(call: telebot.types.CallbackQuery) -> None:
 	:param call: Результат данных с клавиатуры
 	:return: None
 	"""
-	user = User.users[call.message.chat.id]
+	user = User.get_user(call.message.chat.id)
 	user.user_vars['id_city'] = call.data[1:]
 	bot.edit_message_text(
 		chat_id=call.message.chat.id,
@@ -165,7 +164,8 @@ def get_num_hotels(message: telebot.types.Message, user: User) -> None:
 @logger.catch
 def get_answer_num_hotels(message: telebot.types.Message, user: User) -> None:
 	"""
-	Функция обраотчик запроса количества отелей, внутри реализован контроль ввода.
+	Функция обраотчик запроса количества отелей,
+	внутри реализован контроль ввода.
 	:param user: объект класса User
 	:param message: Сообщение от пользователя
 	:return:
@@ -187,7 +187,7 @@ def get_answer_num_hotels(message: telebot.types.Message, user: User) -> None:
 				bot.send_message(
 					message.from_user.id,
 					"Просматриваю варианты, это займет некоторое время")
-				get_price(message,user)
+				get_price(message, user)
 			elif user.user_vars['method'] == 'bestdeal':
 				bestdeal.answer_min_price(user, bot)
 			else:
@@ -234,7 +234,7 @@ def callback_repl(call: telebot.types.CallbackQuery) -> None:
 	:param call: Результат данных с клавиатуры
 	:return: None
 	"""
-	user = User.users[call.message.chat.id]
+	user = User.get_user(call.message.chat.id)
 	text = 'Просматриваю варианты, это займет некоторое время'
 	reply = call.data.split('|')
 	user.user_vars['method'] = reply[1]
@@ -249,8 +249,9 @@ def callback_repl(call: telebot.types.CallbackQuery) -> None:
 		bot.edit_message_text(
 			chat_id=call.message.chat.id,
 			message_id=call.message.message_id,
-			text=f"Ищем отели с заданым диапазоном цен и расстоянию от центра.\n"
-			f"Еще несколько вопросов...")
+			text=f"Ищем отели с заданым диапазоном "
+				 f"цен и расстоянию от центра.\n"
+				 f"Еще несколько вопросов...")
 		bestdeal.answer_min_price(user, bot)
 	else:
 		bot.edit_message_text(
@@ -303,19 +304,17 @@ def bestdeal_city(message: telebot.types.Message, user: User) -> None:
 		bestdeal.answer_min_price(user, bot)
 
 
-bot.polling(none_stop=True, interval=0)
-
-# if __name__ == '__main__':
-# 	logger.add(
-# 		'bot_debug.log',
-# 		format="{time} {level} {message}",
-# 		level="DEBUG",
-# 		rotation='00:00',
-# 		compression='zip',
-# 		encoding='UTF-8')
-# 	logger.info("Запуск бота")
-# 	while 1:
-# 		try:
-# 			bot.polling(none_stop=True, interval=0)
-# 		except Exception as e:
-# 			logger.error(f'Возникла ошибка {e}')
+if __name__ == '__main__':
+	logger.add(
+		'bot_debug.log',
+		format="{time} {level} {message}",
+		level="DEBUG",
+		rotation='00:00',
+		compression='zip',
+		encoding='UTF-8')
+	logger.info("Запуск бота")
+	while 1:
+		try:
+			bot.polling(none_stop=True, interval=0)
+		except Exception as e:
+			logger.error(f'Возникла ошибка {e}')

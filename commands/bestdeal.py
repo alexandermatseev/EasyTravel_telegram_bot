@@ -18,7 +18,8 @@ headers = {
 
 def best_deal(user_vars: dict) -> list or str:
 	"""
-	Функция которая делает запрос с заданными параметрами минимальной и мкасимальной ценой и
+	Функция которая делает запрос с заданными параметрами
+	минимальной и мкасимальной ценой и
 	минимальным и максимальным расстоянием.
 	:param user_vars: dict[str]:str
 	:return: list
@@ -48,23 +49,26 @@ def best_deal(user_vars: dict) -> list or str:
 
 		for i in range(len(new_list)):
 			res_dict = dict()
-			distance_value = new_list[i].get('landmarks')[0].get('distance')[:-6]
-			distance_value = round(float(distance_value) * 1.61, 2)
+			distance_value = \
+				new_list[i].get('landmarks')[0].get('distance')[:-6]
+			dist_value = round(float(distance_value) * 1.61, 2)
 			if ((float(distance_value) < float(user_vars['min_distance']))
-					or (float(user_vars['max_distance']) < float(distance_value))):
+					or (float(user_vars['max_distance']) < float(dist_value))):
 				continue
 			else:
 				res_dict['distance'] = str(distance_value)
 				name_value = new_list[i].get('name')
 				res_dict['name'] = name_value
 				if "streetAddress" in new_list[i].get("address"):
-					address_value = new_list[i].get("address")["streetAddress"] \
-									+ ', ' + new_list[i].get("address")['locality'] \
-									+ ', ' + new_list[i].get("address")['countryName']
+					address_value = \
+						new_list[i].get("address")["streetAddress"] \
+						+ ', ' + new_list[i].get("address")['locality'] \
+						+ ', ' + new_list[i].get("address")['countryName']
 					res_dict["address"] = address_value
 				else:
-					address_value = new_list[i].get("address")['locality'] \
-									+ ', ' + new_list[i].get("address")['countryName']
+					address_value = \
+						new_list[i].get("address")['locality'] \
+						+ ', ' + new_list[i].get("address")['countryName']
 					res_dict["address"] = address_value
 				price_value = new_list[i].get('ratePlan')['price']['current']
 				res_dict['price'] = price_value
@@ -168,7 +172,8 @@ def get_max_price(
 		if int(user.user_vars['min_price']) > int(message.text):
 			bot.send_message(
 				message.from_user.id,
-				f"Вы перепутали максималюную и минимальную цену местами, но я все исправил"
+				f"Вы перепутали максималюную и минимальную цену местами,"
+				f" но я все исправил"
 			)
 			user.user_vars['max_price'] = user.user_vars['min_price']
 			user.user_vars['min_price'] = message.text
@@ -279,7 +284,8 @@ def bestdeal_message(
 		if int(user.user_vars['min_distance']) > int(message.text):
 			bot.send_message(
 				message.from_user.id,
-				f"Вы перепутали максимальное и минимальное расстояние местами, но я все исправил"
+				f"Вы перепутали максимальное и минимальное расстояние местами,"
+				f" но я все исправил"
 				)
 			user.user_vars['max_distance'] = \
 				user.user_vars['min_distance']

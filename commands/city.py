@@ -3,7 +3,6 @@ import re
 import requests
 import telebot
 
-
 TAG_RE = re.compile(r'<[^>]+>')
 
 
@@ -31,7 +30,9 @@ def get_city(city: str) -> dict or str:
 	response = requests.request("GET", url, headers=headers, params=querystring)
 	data = response.json()
 	if response.status_code != 200:
-		return 'Простите, я не могу найти информацию по отелям в этом городе. Свяжитесь с оператором'
+		text = f'Простите, я не могу найти информацию' \
+			   f'по отелям в этом городе.Свяжитесь с оператором'
+		return text
 	if data["moresuggestions"] == 0:
 		text = \
 			f'Произошла ошибка,\n' \
@@ -49,7 +50,11 @@ def get_city(city: str) -> dict or str:
 		}
 
 
-def get_answer_city(user, message: telebot.types.Message, bot: telebot.TeleBot) -> None:
+def get_answer_city(
+		user,
+		message: telebot.types.Message,
+		bot: telebot.TeleBot
+) -> None:
 	"""
 	Функция - оброботчик сообщения о названии города.
 	:param bot: объект TeleBot
