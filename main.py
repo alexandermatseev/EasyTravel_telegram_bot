@@ -63,6 +63,8 @@ def get_text_messages(message: telebot.types.Message) -> None:
 		method_sort(message, user)
 	elif message.text == "/bestdeal":
 		bestdeal_city(message, user)
+	elif message.text == "/city":
+		get_name_city(message, user)
 	else:
 		get_answer_city(message, user)
 
@@ -114,12 +116,16 @@ def get_answer_city(message: telebot.types.Message, user: User) -> None:
 	:return: None
 	"""
 	try:
-		user.city_dict = city.get_city(message.text)
-		if isinstance(user.city_dict, dict):
-			city.get_answer_city(user, message, bot)
-		elif isinstance(user.city_dict, str):
-			bot.send_message(message.from_user.id, user.city_dict)
-			get_name_city(message, user)
+		if message.text.isalpha():
+			user.city_dict = city.get_city(message.text)
+			if isinstance(user.city_dict, dict):
+				city.get_answer_city(user, message, bot)
+			elif isinstance(user.city_dict, str):
+				bot.send_message(message.from_user.id, user.city_dict)
+				get_name_city(message, user)
+			else:
+				bot.send_message(message.from_user.id, f'Ошибка ввода, не допустимое название')
+				get_name_city(message, user)
 	except (ValueError, KeyError):
 		bot.send_message(
 			message.from_user.id,
@@ -177,8 +183,8 @@ def get_answer_num_hotels(message: telebot.types.Message, user: User) -> None:
 				or (25 < int(user.user_vars['num_hotels']))):
 			bot.send_message(
 				message.from_user.id,
-				f"Вы ввели не коректное число отелей, "
-				f"попробуйте снова( нужно ввести целое число, например 5)"
+				"Вы ввели не коректное число отелей, "
+				"попробуйте снова( нужно ввести целое число, например 5)"
 			)
 			get_num_hotels(message, user)
 		else:
@@ -195,8 +201,8 @@ def get_answer_num_hotels(message: telebot.types.Message, user: User) -> None:
 	except ValueError:
 		bot.send_message(
 			message.from_user.id,
-			f"Вы ввели не коректное число отелей, "
-			f"попробуйте снова( нужно ввести целое число, например 5)")
+			"Вы ввели не коректное число отелей, "
+			"попробуйте снова( нужно ввести целое число, например 5)")
 		get_num_hotels(message)
 
 
@@ -249,15 +255,15 @@ def callback_repl(call: telebot.types.CallbackQuery) -> None:
 		bot.edit_message_text(
 			chat_id=call.message.chat.id,
 			message_id=call.message.message_id,
-			text=f"Ищем отели с заданым диапазоном "
-				 f"цен и расстоянию от центра.\n"
-				 f"Еще несколько вопросов...")
+			text="Ищем отели с заданым диапазоном "
+				 "цен и расстоянию от центра.\n"
+				 "Еще несколько вопросов...")
 		bestdeal.answer_min_price(user, bot)
 	else:
 		bot.edit_message_text(
 			chat_id=call.message.chat.id,
 			message_id=call.message.message_id,
-			text=f"Ищу отели в другом городе.")
+			text="Ищу отели в другом городе.")
 		get_name_city(call.message, user)
 
 
@@ -302,7 +308,6 @@ def bestdeal_city(message: telebot.types.Message, user: User) -> None:
 		get_name_city(message, user)
 	else:
 		bestdeal.answer_min_price(user, bot)
-
 
 if __name__ == '__main__':
 	logger.add(
