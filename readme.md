@@ -1,6 +1,6 @@
 # EasyTravel_telegram_bot
 
-![alt text](source/logo.png "EasyTravel")
+
 
 An application that searches for hotels by several criteria.
 The application can be used as an alternative to a website for a small travel company.The bot can be used by an employee of the company and as a tool for automatic selection according to specified parameters, by the company's clients.
@@ -22,10 +22,6 @@ for choosing a hotel using the methods described below,
 this command is implemented automatically: 
 the bot automatically accepts the name of the city for input.
 
-![alt text](source/city_command1.png)
-
-![alt text](source/city_comand2.png)
-
 
 ### lowprice command
 The command is called by entering /lowprice 
@@ -43,7 +39,6 @@ and implements the search for hotels by the specified parameters.
 The user is asked for the minimum and maximum values of the hotel prices
 and the range of distances from the city center
 
-![alt text](source/bestdeal.png "")
 
 The basic logic of the bot is reduced to the fact that the user 
 does not need to enter commands, just enter the name of the city, 
